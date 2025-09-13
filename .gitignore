@@ -1,36 +1,79 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+## 📁 **File 2: .gitignore**
+**Location:** `.gitignore` (root directory)
+```gitignore
+# Dependencies
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# Environment variables - NEVER commit secrets!
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
-.vercel
+# Database
+*.db
+*.sqlite
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Logs - these get huge and contain sensitive data
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE files - everyone uses different editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Docker
+.dockerignore
+
+# IBM Cloud - these contain sensitive deployment info
+.bluemix/
+.ibmcloud/
+
+# Kubernetes secrets - NEVER commit these!
+secrets/
+*.key
+*.crt
+kubeconfig
+
+# Terraform state files - contain infrastructure secrets
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+# Package lock files - comment out if you want to commit them
+# package-lock.json
+# yarn.lock
