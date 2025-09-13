@@ -1,0 +1,106 @@
+# Development environment setup
+# This creates local versions of our services for testing
+version: '3.8'
+
+services:
+  # PostgreSQL database - local version of what we'll have on IBM Cloud
+  postgres:
+    image: postgres:15-alpine
+    container_name: shadow-ai-postgres-dev
+    environment:
+      # These are dev-only credentials - NEVER use in production!
+      POSTGRES_DB: shadow_ai_dev
+      POSTGRES_USER: shadow_dev
+      POSTGRES_PASSWORD: dev_password_123
+      POSTGRES_HOST_AUTH_METHOD: md5
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persist database data between container restarts
+      - postgres_data:/var/lib/postgresql/data
+      # Load our schema on startup
+      - ./backend/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - shadow-ai-network
+    healthcheck:
+      # Make sure database is ready before other services start
+      test: ["CMD-SHELL", "pg_isready -U shadow_dev -d shadow_ai_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: shadow-ai-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      # Redis config for development
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - shadow-ai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Our main API service
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: shadow-ai-api-dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://shadow_dev:dev_password_123@postgres:5432/shadow_ai_dev
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev_jwt_secret_change_in_production
+      - API_PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      # Live reload during development
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shadow-ai-network
+    command: npm run dev
+
+  # React frontend application
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: shadow-ai-web-dev
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - REACT_APP_ENV=development
+    ports:
+      - "3000:3000"
+    volumes:
+      # Live reload for React development
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - shadow-ai-network
+    command: npm start
+
+# Persistent storage for development
+volumes:
+  postgres_data:
+    driver: local
+
+# Isolated network for our services
+networks:
+  shadow-ai-network:
+    driver: bridge
